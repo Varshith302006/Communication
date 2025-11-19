@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Daily Lab</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="container d-flex justify-content-center align-items-center py-4">
+    <div class="card main-card w-100">
+
+      <!-- LOGIN PAGE -->
+      <section id="login" class="page active">
+        <h1>Welcome back 👋</h1>
+        <p class="auth-sub">Sign in with your user ID and start practising.</p>
+
+        <input id="login-id" placeholder="User ID" />
+        <input id="login-password" type="password" placeholder="Password" />
+
+        <button class="primary-btn" id="login-btn">Sign In</button>
+        <p class="msg" id="login-msg"></p>
+
+        <p class="switch" id="go-signup">New here? Create an account</p>
+      </section>
+
+      <!-- SIGNUP PAGE -->
+      <section id="signup" class="page">
+        <h1>Create account ✨</h1>
+        <p class="auth-sub">Choose a user ID, email and password to get started.</p>
+
+        <input id="signup-id" placeholder="Choose a User ID" />
+        <input id="signup-email" type="email" placeholder="Email" />
+        <input id="signup-password" type="password" placeholder="Password" />
+
+        <button class="primary-btn" id="signup-btn">Create Account</button>
+        <p class="msg" id="signup-msg"></p>
+
+        <p class="switch" id="go-login">Already have an account? Log in</p>
+      </section>
+
+      <!-- DASHBOARD PAGE -->
+      <section id="dashboard" class="page">
+        <header class="dash-header">
+          <div>
+            <div class="dash-title">English Daily Lab</div>
+            <div class="dash-sub" id="welcome-msg">Welcome!</div>
+          </div>
+          <div class="avatar" id="user-avatar">U</div>
+        </header>
+
+        <button class="primary-btn grammar-toggle-btn" id="open-grammar-btn">
+          Know your grammar
+        </button>
+
+        <button class="primary-btn grammar-toggle-btn" id="open-friends-btn">
+          Friends
+        </button>
+
+        <div class="logout-wrap">
+          <button class="logout-btn" id="logout-btn">Log Out</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- FULLSCREEN GRAMMAR OVERLAY -->
+  <div id="grammar-overlay" class="grammar-overlay hidden">
+    <div class="grammar-panel">
+
+      <button class="back-arrow" id="back-arrow">←</button>
+
+      <h2 class="grammar-title">Grammar Lab</h2>
+      <p class="grammar-subtitle">
+        Check your grammar or explore useful words and expressions.
+      </p>
+
+      <div class="tool-modes">
+        <button class="tool-btn active" id="tool-grammar">Grammar check</button>
+        <button class="tool-btn" id="tool-words">Know your word</button>
+      </div>
+
+      <div class="clear-chat-wrap">
+        <button class="clear-chat-btn" id="clear-chat-btn">🧹 Clear chat</button>
+      </div>
+
+      <div class="grammar-body">
+        <div id="grammar-chat" class="grammar-chat"></div>
+
+        <div class="input-bar">
+          <button class="mic-input-btn" id="mic-btn">🎙️</button>
+
+          <textarea
+            id="grammar-input"
+            placeholder="Type your sentence here. Enter = check, Shift+Enter = new line."
+          ></textarea>
+
+          <button class="send-btn" id="grammar-send-btn">Check</button>
+        </div>
+
+        <p class="msg small" id="grammar-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN FRIENDS OVERLAY -->
+  <div id="friends-overlay" class="grammar-overlay hidden">
+    <div class="grammar-panel">
+
+      <button class="back-arrow" id="friends-back-arrow">←</button>
+
+      <h2 class="grammar-title">Friends</h2>
+      <p class="grammar-subtitle">Chat with your friends privately.</p>
+
+      <div class="friends-chat-wrap">
+        <div class="friends-list">
+          <h3 class="friends-title">All Users</h3>
+          <ul id="overlay-friends-list"></ul>
+        </div>
+
+        <div id="overlay-chat-panel" class="chat-panel hidden">
+          <div class="chat-header">
+            <button id="overlay-close-chat" class="chat-back-btn">←</button>
+            <span id="overlay-chat-with-name"></span>
+          </div>
+
+          <div id="overlay-chat-messages" class="chat-messages"></div>
+
+          <div class="chat-input-bar">
+            <input id="overlay-chat-input" placeholder="Type a message..." />
+            <button id="overlay-chat-send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+ 
