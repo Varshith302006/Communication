@@ -55,7 +55,9 @@
         <button class="primary-btn grammar-toggle-btn" id="open-grammar-btn">
           Know your grammar
         </button>
-
+        <button class="primary-btn grammar-toggle-btn" id="open-jam-btn">
+          Jam session
+        </button>
         <button class="primary-btn grammar-toggle-btn" id="open-friends-btn">
           Friends
         </button>
@@ -92,7 +94,7 @@
         <div id="grammar-chat" class="grammar-chat"></div>
 
         <div class="input-bar">
-          <button class="mic-input-btn" id="mic-btn">🎙️</button>
+          <button class="mic-input-btn" id="mic-btn">🎤</button>
 
           <textarea
             id="grammar-input"
@@ -126,6 +128,7 @@
           <div class="chat-header">
             <button id="overlay-close-chat" class="chat-back-btn">←</button>
             <span id="overlay-chat-with-name"></span>
+            <button id="overlay-clear-chat" class="clear-chat-btn">🧹 Clear chat</button>
           </div>
 
           <div id="overlay-chat-messages" class="chat-messages"></div>
@@ -139,7 +142,61 @@
 
     </div>
   </div>
+    <div id="jam-overlay" class="grammar-overlay hidden">
+    <div class="grammar-panel">
 
+      <button class="back-arrow" id="jam-back-arrow">←</button>
+
+      <h2 class="grammar-title">Jam Session</h2>
+      <p class="grammar-subtitle">
+        Speak or write about a topic for up to 10 minutes. Then get feedback on grammar, sentences, and depth.
+      </p>
+
+      <div class="jam-body">
+
+        <!-- TOP BAR -->
+        <div class="jam-top-bar">
+          <button id="jam-refresh-btn" class="jam-refresh-btn">↻ Refresh</button>
+
+          <div class="jam-timer-block">
+            <span class="jam-timer-label">Time left</span>
+            <div id="jam-timer" class="jam-timer">10:00</div>
+          </div>
+        </div>
+
+        <!-- TOPICS -->
+        <div class="jam-topic">
+          <label class="jam-label">Choose a topic</label>
+          <select id="jam-topic-select">
+            <option value="">-- Select topic --</option>
+            <option value="My daily routine">My daily routine</option>
+            <option value="A memorable trip">A memorable trip</option>
+            <option value="My dream job">My dream job</option>
+          </select>
+          <input id="jam-custom-topic" class="jam-input" placeholder="Or type your own topic" />
+        </div>
+
+        <!-- TEXT + MIC ROW -->
+        <div class="jam-input-area">
+          <label class="jam-label">Talk or write about your topic</label>
+
+          <div class="jam-input-row">
+            <textarea id="jam-text-input" class="jam-textarea"></textarea>
+            <button id="jam-mic-btn" class="mic-input-btn">🎤</button>
+          </div>
+
+          <small class="msg small">
+            You can start by typing or by using the mic. The 10-minute timer starts when you begin.
+          </small>
+        </div>
+
+        <button id="jam-submit-btn" class="primary-btn jam-submit-btn">Finish & get feedback</button>
+
+        <p class="msg small" id="jam-status"></p>
+        <div id="jam-results" class="jam-results"></div>
+      </div>
+    </div>
+  </div>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
