@@ -11,9 +11,9 @@ const app = express();
 const PORT = 3000;
 
 // 🔐 Put your OpenAI API key here (KEEP IT SECRET, on server only)
-const OPENAI_API_KEY = ""; // <-- REPLACE WITH REAL KEY
+const OPENAI_API_KEY = "process.env.OPENAI_API_KEY"; // <-- REPLACE WITH REAL KEY
 
-if (!OPENAI_API_KEY || OPENAI_API_KEY === "process.env.OPENAI_API_KEY") {
+if (!OPENAI_API_KEY || OPENAI_API_KEY === "") {
   console.warn("⚠️ OPENAI_API_KEY is not set. Please update server.js");
 }
 
