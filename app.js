@@ -7,7 +7,6 @@ const client = supabase.createClient(
 // ---------- STATE ----------
 let currentUserId = null;
 let currentUserUid = null;
-let recognition = null;
 let currentTool = "grammar";
 
 // Separate chat histories
@@ -34,6 +33,19 @@ let grammarSpeechFinal = "";
 let grammarSpeechInterim = "";
 let grammarRecognition = null;
 let grammarMicActive = false;
+
+// Friends chat speech state (similar to Jam)
+let friendsTypedText = "";
+let friendsSpeechFinal = "";
+let friendsSpeechInterim = "";
+let friendsRecognition = null;
+let friendsMicActive = false;
+let grammarCheckEnabled = true;
+
+// ---------- PRESENCE ----------
+let presenceChannel = null;
+let onlineUsersState = {};
+
 
 // ---------- DOM ELEMENTS ----------
 
@@ -88,14 +100,107 @@ const friendsOverlay = document.getElementById("friends-overlay");
 const friendsBackArrow = document.getElementById("friends-back-arrow");
 
 const overlayFriendsList = document.getElementById("overlay-friends-list");
+const searchInput = document.getElementById("friends-search");
+
+if (searchInput) {
+   searchInput.addEventListener("input", () => {
+    const value = searchInput.value.toLowerCase();
+    const friendItems = document.querySelectorAll("#friends-overlay .friend-item");
+
+    let visibleCount = 0;
+
+    friendItems.forEach(item => {
+        const name = item.querySelector(".friend-name")?.innerText.toLowerCase() || "";
+
+        if (name.includes(value)) {
+            item.style.display = "flex";
+            visibleCount++;
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    // 👇 ADD THIS BLOCK
+    let noMsg = document.getElementById("no-users-msg");
+
+    if (visibleCount === 0) {
+        if (!noMsg) {
+            noMsg = document.createElement("div");
+            noMsg.id = "no-users-msg";
+            noMsg.textContent = "No users found";
+            noMsg.style.textAlign = "center";
+            noMsg.style.color = "#777";
+            noMsg.style.marginTop = "20px";
+            document.getElementById("overlay-friends-list").appendChild(noMsg);
+        }
+    } else {
+        if (noMsg) noMsg.remove();
+    }
+});
+
+}
+
 const overlayChatPanel = document.getElementById("overlay-chat-panel");
 const overlayChatWithName = document.getElementById("overlay-chat-with-name");
+const overlayChatAvatar = document.getElementById("overlay-chat-avatar");
+const overlayChatStatus = document.getElementById("overlay-chat-status");
 const overlayChatMessages = document.getElementById("overlay-chat-messages");
 const overlayChatInput = document.getElementById("overlay-chat-input");
 const overlayChatSendBtn = document.getElementById("overlay-chat-send-btn");
 const overlayCloseChat = document.getElementById("overlay-close-chat");
 const overlayClearChat = document.getElementById("overlay-clear-chat");
+const friendsMicBtn = document.getElementById("friends-mic-btn");
+const grammarToggleBtn = document.getElementById("grammar-toggle-btn");
 
+if (grammarToggleBtn) {
+ grammarToggleBtn.addEventListener("click", () => {
+    grammarCheckEnabled = !grammarCheckEnabled;
+
+    if (grammarCheckEnabled) {
+        grammarToggleBtn.classList.remove("inactive");
+        grammarToggleBtn.textContent = "Grammar ✓";
+        overlayChatStatus.textContent = "Grammar check enabled";
+    } else {
+        grammarToggleBtn.classList.add("inactive");
+        grammarToggleBtn.textContent = "Grammar ✗";
+        overlayChatStatus.textContent = "Grammar check disabled";
+    }
+
+    // Reset status message
+    setTimeout(() => {
+        overlayChatStatus.textContent = "Online";
+    }, 1500);
+});
+
+}
+
+// Mic toggle for FRIENDS chat
+if (friendsMicBtn) {
+  friendsMicBtn.addEventListener("click", () => {
+    // snapshot current typed text as baseline
+    friendsTypedText = overlayChatInput.value.trim();
+    friendsSpeechFinal = "";
+    friendsSpeechInterim = "";
+
+    if (!friendsMicActive) {
+      stopFriendsRecognition(); // clean old one if any
+      friendsRecognition = initFriendsSpeech();
+      if (!friendsRecognition) return;
+      friendsMicActive = true;
+      friendsRecognition.start();
+    } else {
+      stopFriendsRecognition();
+    }
+  });
+}
+const friendsInput = document.getElementById("overlay-chat-input");
+
+if (friendsInput) {
+  friendsInput.addEventListener("input", () => {
+    friendsInput.style.height = "auto";  
+    friendsInput.style.height = (friendsInput.scrollHeight) + "px";
+  });
+}
 
 // Jam Session overlay DOM
 const openJamBtn = document.getElementById("open-jam-btn");
@@ -110,7 +215,6 @@ const jamSubmitBtn = document.getElementById("jam-submit-btn");
 const jamStatus = document.getElementById("jam-status");
 const jamResults = document.getElementById("jam-results");
 const jamRefreshBtn = document.getElementById("jam-refresh-btn");
-
 
 if (jamRefreshBtn) {
   jamRefreshBtn.addEventListener("click", () => {
@@ -166,6 +270,10 @@ function resetGrammarUI() {
   grammarInput.value = "";
   grammarStatus.textContent = "";
   grammarChat.innerHTML = "";
+  grammarTypedText = "";
+grammarSpeechFinal = "";
+grammarSpeechInterim = "";
+
 }
 
 // ---------- JAM HELPERS ----------
@@ -331,9 +439,8 @@ function stopJamRecognition() {
   jamSpeechInterim = "";
 
   if (jamMicBtn) jamMicBtn.classList.remove("listening");
-  if (jamStatus) jamStatus.textContent = "";   // <-- FIX: clears “Listening…”
+  if (jamStatus) jamStatus.textContent = ""; // clear “Listening…”
 }
-
 
 // ---------- GRAMMAR LAB SPEECH (same behavior) ----------
 
@@ -366,9 +473,7 @@ function initGrammarSpeech() {
   recog.onend = () => {
     micBtn.classList.remove("listening");
     grammarMicActive = false;
-     jamMicBtn.classList.remove("listening");
-   jamMicActive = false;
-  jamStatus.textContent = "";
+    // no touching jam mic or jam status here
   };
 
   recog.onresult = (event) => {
@@ -411,16 +516,117 @@ function stopGrammarRecognition() {
       console.warn("Error stopping grammar mic:", e);
     }
   }
+
   grammarRecognition = null;
   grammarMicActive = false;
   grammarSpeechInterim = "";
+
   if (micBtn) micBtn.classList.remove("listening");
+
+  // 🔥 FIX: remove “Listening...”
+  if (grammarStatus) grammarStatus.textContent = "";
+}
+
+
+// ---------- FRIENDS CHAT SPEECH (similar behavior to Jam) ----------
+
+function initFriendsSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert("Speech recognition not supported in this browser.");
+    return null;
+  }
+
+  const recog = new SR();
+  recog.lang = "en-US";
+  recog.interimResults = true;
+  recog.continuous = true;
+
+  recog.lastProcessed = -1;
+
+  recog.onstart = () => {
+    recog.lastProcessed = -1;
+    if (overlayChatStatus) {
+      overlayChatStatus.textContent = "Listening...";
+    }
+    if (friendsMicBtn) {
+      friendsMicBtn.classList.add("listening");
+    }
+  };
+
+  recog.onerror = (e) => {
+    if (overlayChatStatus) {
+      overlayChatStatus.textContent = "Mic error: " + e.error;
+    }
+    if (friendsMicBtn) friendsMicBtn.classList.remove("listening");
+    friendsMicActive = false;
+  };
+
+  recog.onend = () => {
+    if (friendsMicBtn) friendsMicBtn.classList.remove("listening");
+    friendsMicActive = false;
+    // restore default header status
+    if (overlayChatStatus) {
+      overlayChatStatus.textContent = "Tap here for contact info";
+    }
+  };
+
+  recog.onresult = (event) => {
+    let interim = "";
+
+    for (let i = recog.lastProcessed + 1; i < event.results.length; i++) {
+      const result = event.results[i];
+      const text = result[0].transcript;
+
+      if (result.isFinal) {
+        friendsSpeechFinal += text + " ";
+        recog.lastProcessed = i;
+      } else {
+        interim = text;
+      }
+    }
+
+    friendsSpeechInterim = interim;
+
+    overlayChatInput.value = (
+      friendsTypedText +
+      " " +
+      friendsSpeechFinal +
+      " " +
+      friendsSpeechInterim
+    ).trim();
+
+    overlayChatInput.focus();
+  };
+
+  return recog;
+}
+
+function stopFriendsRecognition() {
+  if (friendsRecognition) {
+    try {
+      friendsRecognition.onresult = null;
+      friendsRecognition.onerror = null;
+      friendsRecognition.onend = null;
+      friendsRecognition.stop();
+    } catch (e) {
+      console.warn("Error stopping friends mic:", e);
+    }
+  }
+  friendsRecognition = null;
+  friendsMicActive = false;
+  friendsSpeechInterim = "";
+  if (friendsMicBtn) friendsMicBtn.classList.remove("listening");
 }
 
 // ---------- TOOL SWITCH ----------
 function setTool(tool) {
   currentTool = tool;
-
+  grammarTypedText = "";
+  grammarSpeechFinal = "";
+  grammarSpeechInterim = "";
+  grammarInput.value = "";
+  grammarStatus.textContent = "";
   if (tool === "grammar") {
     toolGrammarBtn.classList.add("active");
     toolWordsBtn.classList.remove("active");
@@ -517,6 +723,21 @@ loginBtn.addEventListener("click", async () => {
     showPage("dashboard");
     // friends list is loaded only inside overlay now
   }, 400);
+});
+// ---------- INIT REALTIME PRESENCE ----------
+presenceChannel = client.channel("presence-users", {
+  config: { presence: { key: currentUserUid } }
+});
+
+presenceChannel.subscribe(async (status) => {
+  if (status === "SUBSCRIBED") {
+    presenceChannel.track({ online: true, at: Date.now() });
+  }
+});
+
+// When presence changes
+presenceChannel.on("presence", { event: "sync" }, () => {
+  onlineUsersState = presenceChannel.presenceState();
 });
 
 logoutBtn.addEventListener("click", async () => {
@@ -681,50 +902,25 @@ function filterIgnoredGrammarIssues(issues) {
 }
 
 // ---------- MIC / SPEECH RECOGNITION ----------
-function initSpeech() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("Speech recognition not supported in this browser.");
-    return null;
-  }
+// Mic toggle for GRAMMAR LAB (same behavior as Jam)
+if (micBtn) {
+  micBtn.addEventListener("click", () => {
+    // snapshot current typed text as baseline
+    grammarTypedText = grammarInput.value.trim();
+    grammarSpeechFinal = "";
+    grammarSpeechInterim = "";
 
-  const recog = new SpeechRecognition();
-  recog.lang = "en-US";
-  recog.interimResults = false;
-
-  recog.onstart = () => {
-    grammarStatus.textContent = "Listening...";
-    micBtn.classList.add("listening");
-  };
-
-  recog.onerror = (e) => {
-    grammarStatus.textContent = "Mic error: " + e.error;
-    micBtn.classList.remove("listening");
-  };
-
-  recog.onend = () => {
-    micBtn.classList.remove("listening");
-  };
-
-  recog.onresult = (event) => {
-    const text = event.results[0][0].transcript;
-    grammarInput.value = text;
-    grammarInput.focus();
-    grammarStatus.textContent = "Press Enter or click the button to send.";
-  };
-
-  return recog;
+    if (!grammarMicActive) {
+      stopGrammarRecognition();      // clean old one if any
+      grammarRecognition = initGrammarSpeech();
+      if (!grammarRecognition) return;
+      grammarMicActive = true;
+      grammarRecognition.start();
+    } else {
+      stopGrammarRecognition();
+    }
+  });
 }
-
-micBtn.addEventListener("click", () => {
-  if (!recognition) {
-    recognition = initSpeech();
-  }
-  if (recognition) {
-    recognition.start();
-  }
-});
 
 function removePunctuation(text) {
   return text.replace(/[.,\/#!?$%\^&\*;:{}=\-_`~()]/g, "");
@@ -952,6 +1148,41 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+function isUserOnline(uid) {
+  return onlineUsersState[uid] !== undefined;
+}
+
+function getLastSeen(uid) {
+  const entry = onlineUsersState[uid];
+  if (!entry) return null;
+
+  const last = entry[0]?.at;
+  if (!last) return null;
+
+  const diffSec = Math.floor((Date.now() - last) / 1000);
+  if (diffSec < 60) return "Active just now";
+  if (diffSec < 3600) return `Active ${Math.floor(diffSec/60)}m ago`;
+  return "Offline";
+}
+
+// Time & preview helpers for WhatsApp-like UI
+function formatTimeHHMM(dateString) {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return "";
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mm = d.getMinutes().toString().padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function buildPreviewText(msg, isMine) {
+  if (!msg || !msg.content) return "";
+  const prefix = isMine ? "You: " : "";
+  let txt = prefix + msg.content;
+  if (txt.length > 40) txt = txt.slice(0, 37) + "...";
+  return txt;
+}
+
 // ---------- FRIENDS OVERLAY LOGIC ----------
 openFriendsBtn.addEventListener("click", () => {
   if (!currentUserUid) {
@@ -967,6 +1198,10 @@ friendsBackArrow.addEventListener("click", () => {
   overlayChatPanel.classList.add("hidden");
   overlayChatMessages.innerHTML = "";
   activeOverlayFriend = null;
+
+  // stop mic if running
+  stopFriendsRecognition();
+
   if (messagesPoll) {
     clearInterval(messagesPoll);
     messagesPoll = null;
@@ -974,49 +1209,127 @@ friendsBackArrow.addEventListener("click", () => {
 });
 
 async function loadOverlayFriends() {
+  overlayFriendsList.innerHTML = "<li class='friend-item loading'>Loading...</li>";
+
   const { data, error } = await client
     .from("user_ids")
     .select("id, user_code")
     .neq("user_code", currentUserId);
 
-  overlayFriendsList.innerHTML = "";
-
   if (error) {
     console.error("loadOverlayFriends error:", error);
-    overlayFriendsList.innerHTML = "<li>Error loading users</li>";
+    overlayFriendsList.innerHTML = "<li class='friend-item'>Error loading users</li>";
     return;
   }
 
   if (!data || !data.length) {
-    overlayFriendsList.innerHTML = "<li>No other users</li>";
+    overlayFriendsList.innerHTML = "<li class='friend-item'>No other users</li>";
     return;
   }
 
-  data.forEach((u) => {
+  // For each friend, fetch the last message between us
+  const friendsWithLast = await Promise.all(
+    data.map(async (u) => {
+      let lastMessage = null;
+      const { data: msgs, error: msgError } = await client
+        .from("messages")
+        .select("sender_id, receiver_id, content, created_at")
+        .or(
+          `and(sender_id.eq.${currentUserUid},receiver_id.eq.${u.id}),` +
+          `and(sender_id.eq.${u.id},receiver_id.eq.${currentUserUid})`
+        )
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!msgError && msgs && msgs.length) {
+        lastMessage = msgs[0];
+      }
+
+      return { ...u, lastMessage };
+    })
+  );
+
+  overlayFriendsList.innerHTML = "";
+
+  friendsWithLast.forEach((u) => {
     const li = document.createElement("li");
-    li.textContent = u.user_code;
     li.className = "friend-item";
+
+    const isMine = u.lastMessage && u.lastMessage.sender_id === currentUserUid;
+    const preview = u.lastMessage
+      ? buildPreviewText(u.lastMessage, isMine)
+      : "No messages yet";
+    const time = u.lastMessage ? formatTimeHHMM(u.lastMessage.created_at) : "";
+    const onlineTag = isUserOnline(u.id) ? 
+    "<span class='online-dot'></span> Online" : 
+    "<span class='offline-dot'></span> Offline";
+
+    li.innerHTML = `
+      <div class="friend-avatar-circle">
+        ${escapeHtml(u.user_code.charAt(0).toUpperCase())}
+      </div>
+      <div class="friend-main">
+        <div class="friend-top-row">
+          <span class="friend-name">${escapeHtml(u.user_code)}</span>
+          <span class="friend-time">${escapeHtml(time)}</span>
+        </div>
+        <div class="friend-bottom-row">
+          <span class="friend-preview">${escapeHtml(preview)}</span>
+        </div>
+      </div>
+    `;
+
     li.addEventListener("click", () => openOverlayChat(u));
     overlayFriendsList.appendChild(li);
   });
 }
+// Highlight active user on click
+document.querySelectorAll(".friend-item").forEach(item => {
+    item.addEventListener("click", () => {
+        // remove active from all
+        document.querySelectorAll(".friend-item").forEach(i =>
+            i.classList.remove("active")
+        );
+
+        // set active on clicked user
+        item.classList.add("active");
+    });
+});
 
 async function openOverlayChat(friend) {
-  activeOverlayFriend = friend.id;    // NOT friend object
+  activeOverlayFriend = friend.id; // store only id
   overlayChatPanel.classList.remove("hidden");
+
   overlayChatWithName.textContent = friend.user_code;
+  if (overlayChatAvatar) {
+    overlayChatAvatar.textContent = friend.user_code.charAt(0).toUpperCase();
+  }
+  if (overlayChatStatus) {
+    if (isUserOnline(friend.id)) {
+    overlayChatStatus.textContent = "Online";
+} else {
+    overlayChatStatus.textContent = getLastSeen(friend.id) || "Offline";
+}
+ // simple static status (no presence yet)
+  }
 
   await loadOverlayMessages(activeOverlayFriend);
 
   if (messagesPoll) clearInterval(messagesPoll);
-  messagesPoll = setInterval(() => loadOverlayMessages(activeOverlayFriend), 3000);
+  messagesPoll = setInterval(
+    () => loadOverlayMessages(activeOverlayFriend),
+    3000
+  );
 }
-
 
 overlayCloseChat.addEventListener("click", () => {
   overlayChatPanel.classList.add("hidden");
   overlayChatMessages.innerHTML = "";
   activeOverlayFriend = null;
+
+  // stop mic if running
+  stopFriendsRecognition();
+
   if (messagesPoll) {
     clearInterval(messagesPoll);
     messagesPoll = null;
@@ -1025,6 +1338,12 @@ overlayCloseChat.addEventListener("click", () => {
 
 async function loadOverlayMessages(friendId) {
   if (!currentUserUid || !friendId) return;
+
+  // ✅ CHECK IF USER IS NEAR THE BOTTOM BEFORE UPDATING
+  const isNearBottom =
+    overlayChatMessages.scrollHeight -
+      (overlayChatMessages.scrollTop + overlayChatMessages.clientHeight) <
+    80;
 
   const { data, error } = await client
     .from("messages")
@@ -1035,25 +1354,48 @@ async function loadOverlayMessages(friendId) {
     )
     .order("created_at", { ascending: true });
 
-  overlayChatMessages.innerHTML = "";
+  overlayChatMessages.innerHTML =
+    "<div class='empty-msg'>No messages yet</div>";
 
   if (error) {
     console.error("loadOverlayMessages error:", error);
     return;
   }
 
+  if (!data || !data.length) {
+    overlayChatMessages.scrollTop = 0;
+    return;
+  }
+
+  overlayChatMessages.innerHTML = "";
+
   data.forEach((msg) => {
     const mine = msg.sender_id === currentUserUid;
     const div = document.createElement("div");
     div.className = mine ? "chat-msg me" : "chat-msg them";
-    div.textContent = msg.content;
+
+    const time = formatTimeHHMM(msg.created_at);
+
+    div.innerHTML = `
+      <div class="msg-text">${escapeHtml(msg.content)}</div>
+      <div class="msg-meta">
+        <span class="msg-time">${escapeHtml(time)}</span>
+        ${mine ? `<span class="msg-ticks" title="Delivered">✓✓</span>` : ""}
+      </div>
+    `;
+
     overlayChatMessages.appendChild(div);
   });
 
-  overlayChatMessages.scrollTop = overlayChatMessages.scrollHeight;
+  // ✅ ONLY AUTO SCROLL IF USER WAS NEAR THE BOTTOM
+  if (isNearBottom) {
+    overlayChatMessages.scrollTop = overlayChatMessages.scrollHeight;
+  }
 }
 
+
 overlayChatSendBtn.addEventListener("click", sendOverlayMessage);
+overlayChatInput.style.height = "42px";
 
 overlayChatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -1068,23 +1410,27 @@ async function sendOverlayMessage() {
 
   overlayChatInput.value = "";
 
+  // 🔥 RESET HEIGHT AFTER SENDING
+  overlayChatInput.style.height = "42px";
+
   // 1️⃣ Send user's actual chat message
   await client.from("messages").insert({
     sender_id: currentUserUid,
-    receiver_id: activeOverlayFriend,  // FIXED
+    receiver_id: activeOverlayFriend,
     content: text,
   });
 
-  // 2️⃣ Run grammar check
-  const grammarResult = await checkGrammarInChat(text);
-
-  if (grammarResult) {
-    await client.from("messages").insert({
-      sender_id: currentUserUid,  // bot still counts as you
-      receiver_id: activeOverlayFriend, // FIXED
-      content: grammarResult,
-    });
-  }
+  // 2️⃣ Run grammar check bot
+ if (grammarCheckEnabled) {
+    const grammarResult = await checkGrammarInChat(text);
+    if (grammarResult) {
+        await client.from("messages").insert({
+            sender_id: currentUserUid,
+            receiver_id: activeOverlayFriend,
+            content: grammarResult,
+        });
+    }
+}
 
   loadOverlayMessages(activeOverlayFriend);
 }
@@ -1103,10 +1449,9 @@ async function checkGrammarInChat(text) {
 
     const issues = filterIgnoredGrammarIssues(data.issues);
 
-    return `Corrected: ${data.corrected} | Score: ${data.correctPercent}% | Issues: ${
+    return `GRAMMAR CORRECTION: \n Corrected: ${data.corrected} \n Score: ${data.correctPercent}% \n Issues: ${
       issues.length ? issues.join(", ") : "No major issues"
     }`;
-
   } catch (err) {
     console.error(err);
     return null;
@@ -1120,15 +1465,14 @@ overlayClearChat.addEventListener("click", async () => {
   if (!confirmClear) return;
 
   const me = currentUserUid;
-  const friend = activeOverlayFriend;   // 👈 FIX
+  const friend = activeOverlayFriend;
 
   const { error } = await client
-  .from("messages")
-  .delete()
-  .or(
-    `and(sender_id.eq.${me},receiver_id.eq.${friend}),and(sender_id.eq.${friend},receiver_id.eq.${me})`
-  );
-
+    .from("messages")
+    .delete()
+    .or(
+      `and(sender_id.eq.${me},receiver_id.eq.${friend}),and(sender_id.eq.${friend},receiver_id.eq.${me})`
+    );
 
   if (error) {
     console.log(error);
@@ -1138,4 +1482,3 @@ overlayClearChat.addEventListener("click", async () => {
 
   overlayChatMessages.innerHTML = "<div class='empty-msg'>No messages yet</div>";
 });
-
