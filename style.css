@@ -176,16 +176,18 @@ p.switch {
    FULLSCREEN GRAMMAR OVERLAY
 ---------------------------------------------------- */
 .grammar-overlay {
-  position: fixed;
-  inset: 0; /* shorthand for: top 0, left 0, right 0, bottom 0 */
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
 
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(16px);
-
-  display: flex;
-  padding: 40px;
-
-  z-index: 9999;
+.grammar-overlay:not(.hidden) {
+    display: flex;
 }
 
 
@@ -444,103 +446,22 @@ p.switch {
     max-width: 95%;
   }
 }
-.friends-chat-wrap {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
-}
+/* Friends panel uses a darker theme, like WhatsApp */
+/* =========================================================
+   FRIENDS SECTION — IG STYLE (SOFT WHITE, SAFE FOR DASHBOARD)
+   COMPLETELY SCOPED TO #friends-overlay
+========================================================= */
 
-.friends-list {
-  width: 35%;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 12px;
-  padding: 10px;
-}
 
-.friends-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
+/* MAIN LAYOUT */
 
-#friends-list {
-  list-style: none;
-  padding-left: 0;
-  max-height: 260px;
-  overflow-y: auto;
-}
 
-.friend-item {
-  padding: 6px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-}
 
-.friend-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
 
-.chat-panel {
-  flex: 1;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 12px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-}
 
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
 
-.chat-back-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: #ecfdf5;
-}
 
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
 
-.chat-msg {
-  max-width: 80%;
-  padding: 6px 8px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-.chat-msg.me {
-  align-self: flex-end;
-  background: rgba(34, 197, 94, 0.9);
-  color: #022c22;
-}
-
-.chat-msg.them {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.9);
-  color: #022c22;
-}
-
-.chat-input-bar {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.chat-input-bar input {
-  flex: 1;
-}
 /* ----------------------------------------------------
    JAM SESSION
 ---------------------------------------------------- */
@@ -859,4 +780,571 @@ textarea.jam-textarea {
 .chat-messages {
   flex: 1;              /* take remaining space */
   overflow-y: auto;
+}
+
+#friends-overlay .friends-search-box {
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+#friends-overlay #friends-search {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.9);
+    font-size: 0.95rem;
+    outline: none;
+    transition: 0.2s;
+}
+
+#friends-overlay #friends-search:focus {
+    border-color: #000;
+    background: rgba(255,255,255,1);
+}
+/* FRIEND LIST AVATAR FIX — FORCE CONSISTENT SIZE */
+#friends-overlay .friend-avatar-circle {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    font-size: 1.1rem !important;
+}
+/* CHAT HEADER AVATAR FIX */
+#friends-overlay .chat-header-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    font-size: 1.2rem !important;
+}
+.friend-item.active {
+    transform: scale(1.04);
+    background: #eef2f3 !important;
+    border-left: 4px solid #1fa463;
+}
+/* FIX: Time and preview text overflowing */
+.friend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Make text column take only available space */
+.friend-main {
+    flex: 1;
+    min-width: 0;            /* CRITICAL FIX */
+    overflow: hidden;
+}
+
+/* Time stays right-aligned without pushing out */
+.friend-time {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Preview text stays inside the box */
+.friend-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* FIX — Clean vertical alignment for name + status */
+.chat-header-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Name */
+.chat-header-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+/* Status text under name */
+.chat-header-status {
+    font-size: 0.82rem;
+    color: #7a7a7a;
+    margin-bottom: 4px;
+}
+/* BEAUTIFUL GRAMMAR TOGGLE BUTTON */
+#grammar-toggle-btn {
+    background: #e6f5ff;
+    color: #0369a1;
+    border: 1px solid #90cdf4;
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+#grammar-toggle-btn:hover {
+    background: #d0edff;
+}
+
+#grammar-toggle-btn.active {
+    background: #14b8a6;
+    color: white;
+    border-color: #0d9488;
+}
+/* -------------------------------
+   WHATSAPP STYLE CHAT HEADER FIX
+--------------------------------*/
+/* ======================================================
+   CLEAN FULLSCREEN FRIENDS OVERLAY (WhatsApp Layout)
+====================================================== */
+
+.friends-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #eadecb;
+    z-index: 99999;
+    display: none;
+}
+
+.friends-overlay:not(.hidden) {
+    display: flex;
+}
+
+/* Absolute back arrow */
+.friends-back {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #3d3b3b;
+    border: 1px solid #ccc;
+    z-index: 10;
+    cursor: pointer;
+}
+
+/* Wrapper */
+.friends-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+}
+
+/* LEFT SIDE */
+.friends-left {
+    width: 28%;
+    background: #ffffff;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+}
+
+.friends-title {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+}
+
+.friends-search-box {
+    padding: 10px 14px;
+}
+
+.friends-list-inner {
+    list-style: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.friend-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f2f2f2;
+    background: #ffffff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.friend-item:hover {
+    background: #f5f6f6;
+}
+
+.friend-avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #d1f0ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* RIGHT CHAT */
+.friends-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #efeae2;
+}
+
+/* Chat header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #d1d7db;
+}
+
+.chat-back-btn {
+    background: transparent;
+    border: none;
+    color: #444;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.chat-header-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex: 1;
+}
+
+.chat-header-avatar {
+    width: 40px;
+    height: 40px;
+    background: #d1f0ff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+}
+
+.chat-header-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.chat-header-status {
+    font-size: 12px;
+    color: #6a8290;
+}
+
+/* Messages area */
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chat-msg {
+    max-width: 70%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+/* Sender bubbles */
+.chat-msg.me {
+    align-self: flex-end;
+    background: #4dac3c;
+}
+
+/* Receiver bubbles */
+.chat-msg.them {
+    align-self: flex-start;
+    background: #ffffff;
+}
+
+/* Input bar */
+.chat-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f0f2f5;
+    border-top: 1px solid #d1d7db;
+}
+
+.chat-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.chat-input {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    resize: none;
+}
+
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #09b05f;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+/* === FRIENDS OVERLAY: MAKE IT BRIGHT & SOLID === */
+
+/* Remove dark glass from the friends overlay panel */
+#friends-overlay .grammar-panel,
+#friends-overlay .friends-panel {
+  background: #f0f2f5 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Left sidebar fully bright white */
+#friends-overlay .friends-list {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+}
+
+/* Right chat area solid, no dim */
+#friends-overlay .chat-panel {
+  background: #efeae2 !important;
+}
+
+/* Make header, input bar and bubbles bright */
+#friends-overlay .chat-header,
+#friends-overlay .chat-input-bar {
+  background: #f0f2f5 !important;
+}
+
+/* Optional: make my messages a bit stronger green */
+#friends-overlay .chat-msg.me {
+  background: #75e855 !important;
+  color: #111b21 !important;
+}
+
+/* === INPUT BAR ALIGNMENT FIX === */
+
+/* Global textarea rule was adding margin-top and pushing it down */
+#overlay-chat-input,
+#friends-overlay .chat-input-bar textarea {
+  margin-top: 0 !important;
+}
+
+/* Make sure all three are vertically centered */
+#friends-overlay .chat-input-bar {
+  display: flex;
+  align-items: center;
+}
+/* === REMOVE DIM / FADE / OPACITY LAYERS === */
+
+#friends-overlay * {
+    opacity: 1 !important;
+    color: #111 !important;
+}
+
+/* Sidebar brightness fix */
+.friends-left,
+.friends-list-inner,
+.friend-item {
+    background: #ffffff !important;
+}
+
+/* Chat header fix */
+.chat-header {
+    background: #f0f2f5 !important;
+}
+
+/* Chat panel restored */
+.friends-chat {
+    background: #efeae2 !important;
+}
+
+/* Message bubble text fix */
+.chat-msg.them {
+    color: #111 !important;
+    background: #ffffff !important;
+}
+
+.chat-msg.me {
+    background: #aafc8f !important;
+    color: #111 !important;
+}
+#friends-overlay {
+    background: #efeae2 !important;
+    backdrop-filter: none !important;
+}
+
+#friends-overlay .grammar-panel,
+#friends-overlay .friends-panel {
+    background: none !important;
+    backdrop-filter: none !important;
+}
+/* --- Pull chat bubbles away from the edges --- */
+
+/* my messages (right side) */
+.chat-msg.me {
+  align-self: flex-end;   /* keep them on the right */
+  margin-right: 14px;     /* gap from right edge */
+}
+
+/* friend / bot messages (left side) */
+.chat-msg.them {
+  align-self: flex-start;
+  margin-left: 14px;      /* gap from left edge */
+}
+/* === FRIENDS SECTION FONT CHANGE === */
+#friends-overlay,
+#friends-overlay * {
+    font-family: Verdana, Geneva, sans-serif !important;
+}
+/* ===== FRIENDS LIST TEXT BALANCING ===== */
+
+/* Name (strong, dark) */
+.friend-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111 !important;
+    margin-bottom: 2px;
+}
+
+/* Time (small, light opacity) */
+.friend-time {
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.45) !important;
+    font-weight: 400;
+}
+
+/* Message preview (smaller + low opacity) */
+.friend-preview {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55) !important;
+}
+/* Proper spacing for name + time */
+.friend-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* Name aligned left */
+.friend-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111 !important;
+}
+
+/* Time aligned right */
+.friend-time {
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.45) !important;
+    white-space: nowrap;
+    margin-left: 8px;
+}
+/* Move search box lower */
+.friends-search-box {
+    margin-top: 30px !important;
+}
+/* Smooth tap/click animation */
+.friend-item {
+    transition: transform 0.12s ease, background 0.2s ease;
+}
+
+.friend-item:active {
+    transform: scale(0.97);
+    background: #e9f5ff !important;
+}
+.friend-item.active {
+    background: #e0fff0 !important;
+    border-left: 4px solid #1fa463;
+}
+/* ===================================================
+   MOVE GRAMMAR + CLEAR CHAT BUTTONS TO LEFT SIDE
+   =================================================== */
+
+/* Chat header container */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align items left */
+    gap: 12px; /* space between items */
+}
+
+/* Move Grammar button next to avatar/name */
+.grammar-toggle-btn-header {
+    margin-left: 500px !important; 
+    order: 3; /* position after avatar+meta */
+}
+
+/* Move Clear Chat button next to Grammar */
+.chat-header-icon {
+    order: 4;
+    margin-left: 14px !important;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* Back button stays first */
+.chat-back-btn {
+    order: 1;
+}
+
+/* Avatar + name block stays second */
+.chat-header-info {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* Align everything inside one left-aligned row */
+.chat-header {
+    display: flex;
+    align-items: center;
+    background: #f0f2f5;
+    padding: 10px 14px;
+    gap: 10px;
+}
+
+/* Back button first */
+.chat-back-btn {
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* Avatar, name, status, buttons are grouped */
+.chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Grammar + Clear buttons remain small and inline */
+.grammar-toggle-btn-header,
+.chat-header-icon {
+    margin-left: 100px;
 }
