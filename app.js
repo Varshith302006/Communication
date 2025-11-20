@@ -1266,63 +1266,38 @@ async function loadOverlayFriends() {
 
   overlayFriendsList.innerHTML = "";
 
-  friendsWithLast.forEach(async (u) => {
+  friendsWithLast.forEach((u) => {
     const li = document.createElement("li");
     li.className = "friend-item";
   
-    // Get last message
     const isMine = u.lastMessage && u.lastMessage.sender_id === currentUserUid;
+  
     const preview = u.lastMessage
       ? buildPreviewText(u.lastMessage, isMine)
       : "No messages yet";
+  
     const time = u.lastMessage ? formatTimeHHMM(u.lastMessage.created_at) : "";
-  
-    // ⭐ NEW: Fetch online + last seen
-    const { data: status } = await client
-      .from("user_status")
-      .select("is_online, last_seen")
-      .eq("user_id", u.id)
-      .single();
-  
-    let statusText = "";
-    let dotClass = "";
-  
-    if (status?.is_online) {
-      dotClass = "online-dot"; // 🟢
-      statusText = "Online";
-    } else if (status?.last_seen) {
-      dotClass = "offline-dot"; // ⚪
-      const t = new Date(status.last_seen).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      statusText = "Last seen at " + t;
-    } else {
-      dotClass = "offline-dot";
-      statusText = "Offline";
-    }
   
     li.innerHTML = `
         <div class="friend-avatar-circle">
           ${escapeHtml(u.user_code.charAt(0).toUpperCase())}
-          <span class="${dotClass}"></span>
         </div>
+  
         <div class="friend-main">
           <div class="friend-top-row">
             <span class="friend-name">${escapeHtml(u.user_code)}</span>
             <span class="friend-time">${escapeHtml(time)}</span>
           </div>
+  
           <div class="friend-bottom-row">
             <span class="friend-preview">${escapeHtml(preview)}</span>
           </div>
-          <div class="friend-status-text">${statusText}</div>
         </div>
       `;
   
     li.addEventListener("click", () => openOverlayChat(u));
     overlayFriendsList.appendChild(li);
   });
-
 }
 // Highlight active user on click
 document.querySelectorAll(".friend-item").forEach(item => {
@@ -1566,6 +1541,7 @@ window.addEventListener("beforeunload", async () => {
     })
     .eq("user_id", currentUserUid);
 });
+
 
 
 
