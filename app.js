@@ -723,8 +723,9 @@ loginBtn.addEventListener("click", async () => {
     showPage("dashboard");
     // friends list is loaded only inside overlay now
   }, 400);
-});
-// ---------- INIT REALTIME PRESENCE ----------
+  // -------------------------------------------------------------
+// STEP 2: START PRESENCE TRACKING AFTER LOGIN
+// -------------------------------------------------------------
 presenceChannel = client.channel("presence-users", {
   config: { presence: { key: currentUserUid } }
 });
@@ -732,12 +733,29 @@ presenceChannel = client.channel("presence-users", {
 presenceChannel.subscribe(async (status) => {
   if (status === "SUBSCRIBED") {
     presenceChannel.track({ online: true, at: Date.now() });
+
+    // Mark user online in DB
+    await client.from("user_status").upsert({
+      user_id: currentUserUid,
+      is_online: true,
+      last_seen: new Date().toISOString(),
+    });
   }
 });
 
-// When presence changes
-presenceChannel.on("presence", { event: "sync" }, () => {
-  onlineUsersState = presenceChannel.presenceState();
+// -------------------------------------------------------------
+// STEP 3: HEARTBEAT (PING) EVERY 25 SECONDS
+// -------------------------------------------------------------
+setInterval(async () => {
+  if (!currentUserUid) return;
+  await client.from("user_status")
+    .update({
+      is_online: true,
+      last_seen: new Date().toISOString(),
+    })
+    .eq("user_id", currentUserUid);
+}, 25000);
+
 });
 
 logoutBtn.addEventListener("click", async () => {
@@ -1481,4 +1499,19 @@ overlayClearChat.addEventListener("click", async () => {
   }
 
   overlayChatMessages.innerHTML = "<div class='empty-msg'>No messages yet</div>";
+  
 });
+// -------------------------------------------------------------
+// STEP 4: MARK USER OFFLINE ON TAB CLOSE
+// -------------------------------------------------------------
+window.addEventListener("beforeunload", async () => {
+  if (!currentUserUid) return;
+
+  await client.from("user_status")
+    .update({
+      is_online: false,
+      last_seen: new Date().toISOString()
+    })
+    .eq("user_id", currentUserUid);
+});
+
