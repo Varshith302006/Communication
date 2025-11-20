@@ -1165,23 +1165,20 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+async function getUserStatus(uid) {
+  const { data, error } = await client
+    .from("user_status")
+    .select("is_online, last_seen")
+    .eq("user_id", uid)
+    .single();
 
-function isUserOnline(uid) {
-  return onlineUsersState[uid] !== undefined;
+  if (error || !data) {
+    return { is_online: false, last_seen: null };
+  }
+
+  return data;
 }
 
-function getLastSeen(uid) {
-  const entry = onlineUsersState[uid];
-  if (!entry) return null;
-
-  const last = entry[0]?.at;
-  if (!last) return null;
-
-  const diffSec = Math.floor((Date.now() - last) / 1000);
-  if (diffSec < 60) return "Active just now";
-  if (diffSec < 3600) return `Active ${Math.floor(diffSec/60)}m ago`;
-  return "Offline";
-}
 
 // Time & preview helpers for WhatsApp-like UI
 function formatTimeHHMM(dateString) {
@@ -1278,10 +1275,7 @@ async function loadOverlayFriends() {
       ? buildPreviewText(u.lastMessage, isMine)
       : "No messages yet";
     const time = u.lastMessage ? formatTimeHHMM(u.lastMessage.created_at) : "";
-    const onlineTag = isUserOnline(u.id) ? 
-    "<span class='online-dot'></span> Online" : 
-    "<span class='offline-dot'></span> Offline";
-
+    let onlineTag = "<span class='offline-dot'></span>";
     li.innerHTML = `
       <div class="friend-avatar-circle">
         ${escapeHtml(u.user_code.charAt(0).toUpperCase())}
@@ -1319,17 +1313,23 @@ async function openOverlayChat(friend) {
   overlayChatPanel.classList.remove("hidden");
 
   overlayChatWithName.textContent = friend.user_code;
+
   if (overlayChatAvatar) {
     overlayChatAvatar.textContent = friend.user_code.charAt(0).toUpperCase();
   }
-  if (overlayChatStatus) {
-    if (isUserOnline(friend.id)) {
-    overlayChatStatus.textContent = "Online";
-} else {
-    overlayChatStatus.textContent = getLastSeen(friend.id) || "Offline";
-}
- // simple static status (no presence yet)
-  }
+
+  // ---------------------------------------------------
+  // ✅ NEW: Real Online / Last Seen System
+  // ---------------------------------------------------
+  updateChatStatus(friend.id); // load instantly
+
+  // Live refresh every 5 seconds (like WhatsApp)
+  if (window.statusInterval) clearInterval(window.statusInterval);
+  window.statusInterval = setInterval(() => {
+    updateChatStatus(friend.id);
+  }, 5000);
+
+  // ---------------------------------------------------
 
   await loadOverlayMessages(activeOverlayFriend);
 
@@ -1339,6 +1339,29 @@ async function openOverlayChat(friend) {
     3000
   );
 }
+async function updateChatStatus(friendId) {
+  const { data, error } = await client
+    .from("user_status")
+    .select("is_online, last_seen")
+    .eq("user_id", friendId)
+    .single();
+
+  if (error || !data) {
+    overlayChatStatus.textContent = "Offline";
+    return;
+  }
+
+  if (data.is_online) {
+    overlayChatStatus.textContent = "Online";
+  } else {
+    const time = new Date(data.last_seen).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    overlayChatStatus.textContent = "Last seen at " + time;
+  }
+}
+
 
 overlayCloseChat.addEventListener("click", () => {
   overlayChatPanel.classList.add("hidden");
@@ -1514,4 +1537,5 @@ window.addEventListener("beforeunload", async () => {
     })
     .eq("user_id", currentUserUid);
 });
+
 
