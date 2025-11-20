@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -96,10 +97,8 @@
         <div class="input-bar">
           <button class="mic-input-btn" id="mic-btn">🎤</button>
 
-          <textarea
-            id="grammar-input"
-            placeholder="Type your sentence here. Enter = check, Shift+Enter = new line."
-          ></textarea>
+          <textarea id="grammar-input"
+            placeholder="Type your sentence here. Enter = check, Shift+Enter = new line."></textarea>
 
           <button class="send-btn" id="grammar-send-btn">Check</button>
         </div>
@@ -110,39 +109,63 @@
   </div>
 
   <!-- FULLSCREEN FRIENDS OVERLAY -->
-  <div id="friends-overlay" class="grammar-overlay hidden">
-    <div class="grammar-panel">
+  <!-- FULLSCREEN FRIENDS OVERLAY -->
+  <!-- FULLSCREEN FRIENDS OVERLAY -->
+  <div id="friends-overlay" class="friends-overlay hidden">
 
-      <button class="back-arrow" id="friends-back-arrow">←</button>
+    <!-- Back button -->
+    <button class="friends-back" id="friends-back-arrow">←</button>
 
-      <h2 class="grammar-title">Friends</h2>
-      <p class="grammar-subtitle">Chat with your friends privately.</p>
+    <!-- Fullscreen wrapper -->
+    <div class="friends-wrap">
 
-      <div class="friends-chat-wrap">
-        <div class="friends-list">
-          <h3 class="friends-title">All Users</h3>
-          <ul id="overlay-friends-list"></ul>
+      <!-- LEFT SIDEBAR -->
+      <div class="friends-left">
+        <div class="friends-search-box">
+          <input type="text" id="friends-search" placeholder="Search users...">
         </div>
 
-        <div id="overlay-chat-panel" class="chat-panel hidden">
-          <div class="chat-header">
-            <button id="overlay-close-chat" class="chat-back-btn">←</button>
-            <span id="overlay-chat-with-name"></span>
-            <button id="overlay-clear-chat" class="clear-chat-btn">🧹 Clear chat</button>
-          </div>
+        <ul id="overlay-friends-list" class="friends-list-inner"></ul>
+      </div>
 
-          <div id="overlay-chat-messages" class="chat-messages"></div>
+      <!-- RIGHT CHAT -->
+      <div id="overlay-chat-panel" class="friends-chat hidden">
 
-          <div class="chat-input-bar">
-            <input id="overlay-chat-input" placeholder="Type a message..." />
-            <button id="overlay-chat-send-btn">Send</button>
+        <div class="chat-header">
+          <button id="overlay-close-chat" class="chat-back-btn">←</button>
+
+          <div class="chat-header-info">
+
+            <div id="overlay-chat-avatar" class="chat-header-avatar"></div>
+
+            <div class="chat-header-meta">
+              <div id="overlay-chat-with-name" class="chat-header-name"></div>
+              <div id="overlay-chat-status" class="chat-header-status"></div>
+            </div>
+
+            <!-- MOVE BUTTONS HERE -->
+            <button id="grammar-toggle-btn" class="grammar-toggle-btn-header">Grammar ✓</button>
+            <button id="overlay-clear-chat" class="chat-header-icon">🧹</button>
+
           </div>
         </div>
+
+
+        <div id="overlay-chat-messages" class="chat-messages"></div>
+
+        <div class="chat-input-bar">
+          <button id="friends-mic-btn" class="chat-icon-btn">🎤</button>
+          <textarea id="overlay-chat-input" class="chat-input" placeholder="Type a message..."></textarea>
+          <button id="overlay-chat-send-btn" class="chat-send-btn">➤</button>
+        </div>
+
       </div>
 
     </div>
   </div>
-    <div id="jam-overlay" class="grammar-overlay hidden">
+
+
+  <div id="jam-overlay" class="grammar-overlay hidden">
     <div class="grammar-panel">
 
       <button class="back-arrow" id="jam-back-arrow">←</button>
@@ -200,9 +223,5 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
+
 </html>
- 
-
-
-
-
